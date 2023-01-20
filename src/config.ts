@@ -1,6 +1,4 @@
-import type { SourceUnit } from 'solidity-ast';
-import type { DocItem } from './doc-item';
-import type { PageAssigner, PageStructure } from './site';
+import type { PageAssigner } from './site';
 
 export interface UserConfig {
   /**
@@ -65,6 +63,16 @@ export interface Config extends UserConfig {
   root?: string;
 
   /**
+   * The path to the Ton-Solidity compiler executable.
+   */
+  compilerPath?: string;
+
+  /**
+   * The directory where the ASTs will be written.
+   */
+  astOutputDir?: string;
+
+  /**
    * The Solidity sources directory.
    */
   sourcesDir?: string;
@@ -76,6 +84,8 @@ export const defaults: Omit<FullConfig, 'templates'> = {
   root: process.cwd(),
   sourcesDir: 'contracts',
   outputDir: 'docs',
+  astOutputDir: 'ast',
+  compilerPath: '~/.everdev/solidity/solc',
   pages: 'single',
   exclude: [],
   theme: 'markdown',
