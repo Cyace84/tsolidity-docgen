@@ -1,13 +1,12 @@
 {
   "extends": "code-style/tsconfig.json",
+  "esModuleInterop": true,
   "compilerOptions": {
     "rootDir": "src",
     "outDir": "dist",
     "noUncheckedIndexedAccess": true
   },
-  "include": [
-    "src/**/*"
-  ],
+  "include": ["src/**/*"],
   "ts-node": {
     "transpileOnly": true
   }
