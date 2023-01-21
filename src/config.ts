@@ -53,7 +53,7 @@ export interface UserConfig {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// Other config parameters that will be provided by the environment (e.g. Hardhat)
+// Other config parameters that will be provided by the environment.
 // rather than by the user manually, unless using the library directly.
 export interface Config extends UserConfig {
   /**
