@@ -29,4 +29,8 @@ export async function main(
     await fs.mkdir(path.dirname(outputFile), { recursive: true });
     await fs.writeFile(outputFile, contents);
   }
+
+  await fs.rm(path.resolve(config.root, config.astOutputDir), {
+    recursive: true,
+  });
 }

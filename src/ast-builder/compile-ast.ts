@@ -1,6 +1,8 @@
+import fs from 'fs';
 import { execSync } from 'child_process';
 import { Config } from '../config';
 import { getAstsFromSources, getContractsList } from './getters';
+import path from 'path';
 
 /**
  * It takes the config object, gets a list of contracts, and then compiles the AST for each contract
@@ -8,6 +10,11 @@ import { getAstsFromSources, getContractsList } from './getters';
  */
 export const compileAst = async (config: Config) => {
   const contracts = getContractsList(config.sourcesDir!);
+
+  if (fs.existsSync(config.astOutputDir!)) {
+    fs.rm(path.resolve(config.root!, config.astOutputDir!), () => {});
+  }
+
   contracts.forEach(contract => {
     execSync(
       `${config.compilerPath} --ast-compact-json $PWD/${config.sourcesDir}/${contract} --output-dir=$PWD/${config.astOutputDir}`,
