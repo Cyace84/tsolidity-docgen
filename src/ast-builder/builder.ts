@@ -74,7 +74,7 @@ export const makeBuild = async (
 
   const sortedSources = sortASTByDependency(sourcesList, solcOutput);
   updateDependices(fullSources, sortedSources, config);
-  const ph = path.join(config.root!, config.sourcesDir!, 'build/astBuild.json');
+  const ph = path.join(config.root!, 'build/astBuild.json');
   fs.writeFileSync(ph, JSON.stringify(sortedSources, null, 2));
   solcOutput.sources = sortedSources;
   const solcInput = createInput(solcOutput);

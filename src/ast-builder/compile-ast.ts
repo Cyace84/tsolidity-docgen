@@ -9,7 +9,7 @@ import path from 'path';
  * @param {Config} config - The configuration object that we created earlier.
  */
 export const compileAst = async (config: Config) => {
-  const contracts = getContractsList(config.sourcesDir!);
+  const contracts = getContractsList(config.sourcesDir!, config.exclude!);
 
   if (fs.existsSync(config.astOutputDir!)) {
     fs.rm(path.resolve(config.root!, config.astOutputDir!), () => {});

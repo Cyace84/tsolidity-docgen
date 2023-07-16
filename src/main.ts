@@ -4,6 +4,7 @@ import { render } from './render';
 import { Build, buildSite } from './site';
 import { Config, defaults } from './config';
 import { loadTemplates } from './templates';
+import { replaceAdocReferences } from './utils/update-paths';
 
 /**
  * Given a set of builds (i.e. solc outputs) and a user configuration, this
@@ -23,6 +24,7 @@ export async function main(
   );
   const site = buildSite(builds, config, templates.properties ?? {});
   const renderedSite = render(site, templates, config.collapseNewlines);
+  replaceAdocReferences(renderedSite, config.sourcesDir);
 
   for (const { id, contents } of renderedSite) {
     const outputFile = path.resolve(config.root, config.outputDir, id);
