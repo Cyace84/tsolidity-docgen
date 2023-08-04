@@ -11,24 +11,32 @@ import path from "path";
 export const compileAst = async (config: Config) => {
   const contracts = getContractsList(config.sourcesDir!, config.exclude!);
 
-  if (fs.existsSync(config.astOutputDir!)) {
-    fs.rm(path.resolve(config.root!, config.astOutputDir!), () => {});
+  let astOutputPath = path.resolve(config.root!, config.astOutputDir!);
+  if (fs.existsSync(astOutputPath)) {
+    fs.rmSync(astOutputPath, { recursive: true, force: true });
   }
 
   let ast_cache_path = `ast-cache`;
+  let ast_path = `$PWD/ast`;
 
-  execSync(`mkdir $PWD/${ast_cache_path}`);
-  execSync(`mkdir $PWD/ast`);
+  if (!fs.existsSync(ast_cache_path)) {
+    execSync(`mkdir ${ast_cache_path}`);
+  }
+
+  if (!fs.existsSync(ast_path)) {
+    execSync(`mkdir ${ast_path}`);
+  }
 
   contracts.forEach((contract) => {
     execSync(
       `${config.compilerPath} --ast-compact-json $PWD/${config.sourcesDir}/${contract} --output-dir=$PWD/${ast_cache_path}`
     );
-    execSync(`mv $PWD/${ast_cache_path}/* $PWD/${config.astOutputDir}/`);
+    execSync(`mv $PWD/${ast_cache_path}/* ${astOutputPath}`);
   });
   execSync(`rm -rf $PWD/${ast_cache_path}`);
   compileExternalAst(config);
 };
+
 /**
  * It compiles all the external sources in the project, and saves the ASTs in the `astOutputDir`
  * directory
