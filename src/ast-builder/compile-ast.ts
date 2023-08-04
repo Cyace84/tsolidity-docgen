@@ -1,8 +1,8 @@
-import fs from 'fs';
-import { execSync } from 'child_process';
-import { Config } from '../config';
-import { getAstsFromSources, getContractsList } from './getters';
-import path from 'path';
+import fs from "fs";
+import { execSync } from "child_process";
+import { Config } from "../config";
+import { getAstsFromSources, getContractsList } from "./getters";
+import path from "path";
 
 /**
  * It takes the config object, gets a list of contracts, and then compiles the AST for each contract
@@ -15,14 +15,20 @@ export const compileAst = async (config: Config) => {
     fs.rm(path.resolve(config.root!, config.astOutputDir!), () => {});
   }
 
-  contracts.forEach(contract => {
+  let ast_cache_path = `ast-cache`;
+
+  execSync(`mkdir $PWD/${ast_cache_path}`);
+  execSync(`mkdir $PWD/ast`);
+
+  contracts.forEach((contract) => {
     execSync(
-      `${config.compilerPath} --ast-compact-json $PWD/${config.sourcesDir}/${contract} --output-dir=$PWD/${config.astOutputDir}`,
+      `${config.compilerPath} --ast-compact-json $PWD/${config.sourcesDir}/${contract} --output-dir=$PWD/${ast_cache_path}`
     );
+    execSync(`mv $PWD/${ast_cache_path}/* $PWD/${config.astOutputDir}/`);
   });
+  execSync(`rm -rf $PWD/${ast_cache_path}`);
   compileExternalAst(config);
 };
-
 /**
  * It compiles all the external sources in the project, and saves the ASTs in the `astOutputDir`
  * directory
@@ -31,15 +37,15 @@ export const compileAst = async (config: Config) => {
 export const compileExternalAst = async (config: Config) => {
   const { fullSources } = getAstsFromSources(
     config.astOutputDir!,
-    config.root!,
+    config.root!
   );
 
-  Object.values(fullSources).forEach(source => {
+  Object.values(fullSources).forEach((source) => {
     for (const ast of source.asts) {
       const absolutePath = ast.absolutePath;
       if (!absolutePath.startsWith(config.sourcesDir!)) {
         execSync(
-          `${config.compilerPath} --ast-compact-json $PWD/${absolutePath} --output-dir=$PWD/${config.astOutputDir}`,
+          `${config.compilerPath} --ast-compact-json $PWD/${absolutePath} --output-dir=$PWD/${config.astOutputDir}`
         );
       }
     }
