@@ -29,7 +29,7 @@ const deleteDirectoryIfExists = (dir: string) => {
  * It takes the config object, gets a list of contracts, and then compiles the AST for each contract
  * @param {Config} config - The configuration object that we created earlier.
  */
-export const compileAst = (config: Config) => {
+export const compileAst = async (config: Config) => {
   const contracts = getContractsList(config.sourcesDir!, config.exclude!);
 
   let astOutputPath = resolve(config.root!, config.astOutputDir!);
