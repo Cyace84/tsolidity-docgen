@@ -1,20 +1,20 @@
-import { SourceUnit } from 'solidity-ast';
-import { SolcOutput } from 'solidity-ast/solc';
-import { findAll, isNodeType } from 'solidity-ast/utils';
-import { Config } from '../config';
+import { SourceUnit } from "solidity-ast";
+import { SolcOutput } from "solidity-ast/solc";
+import { findAll, isNodeType } from "solidity-ast/utils";
+import { Config } from "../config";
 import {
   getDependenciesCount,
   getParentAstFromContractId,
   getParentAstFromName,
-} from './getters';
-import { FullSources } from './types';
+} from "./getters";
+import { FullSources } from "./types";
 
 export const resetIds = (ast: any, idCounter: number = 0): number => {
   // Recursively visit child nodes and update their ID's
   for (const key in ast) {
-    if (typeof ast[key] === 'object' && ast[key] !== null) {
-      if (key === 'body') {
-        if (ast.hasOwnProperty('id') && ast.id === undefined) {
+    if (typeof ast[key] === "object" && ast[key] !== null) {
+      if (key === "body") {
+        if (ast.hasOwnProperty("id") && ast.id === undefined) {
           idCounter = resetIds(ast[key], idCounter);
           ast.id = idCounter;
           idCounter++;
@@ -22,7 +22,7 @@ export const resetIds = (ast: any, idCounter: number = 0): number => {
           idCounter = resetIds(ast[key], idCounter);
         }
       } else {
-        if (ast.hasOwnProperty('id') && ast.id === undefined) {
+        if (ast.hasOwnProperty("id") && ast.id === undefined) {
           idCounter = resetIds(ast[key], idCounter);
           ast.id = idCounter;
           idCounter++;
@@ -34,14 +34,14 @@ export const resetIds = (ast: any, idCounter: number = 0): number => {
   }
   // Update references to new ID's
   for (const key in ast) {
-    if (typeof ast[key] === 'number' && key === 'id') {
+    if (typeof ast[key] === "number" && key === "id") {
       if (ast[key] < idCounter) {
         ast[key] = idCounter;
         ++idCounter;
       }
     }
   }
-  if (ast.hasOwnProperty('exportedSymbols')) {
+  if (ast.hasOwnProperty("exportedSymbols")) {
     const name = Object.keys(ast.exportedSymbols)[0]!;
     ast.exportedSymbols[name] = [ast.id - 1];
   }
@@ -58,12 +58,12 @@ const assignIds = (node: any, id: number) => {
 };
 
 export const replaceSrc = (obj: any, id: number) => {
-  if (!obj || typeof obj !== 'object') {
+  if (!obj || typeof obj !== "object") {
     return;
   }
 
-  if (obj.hasOwnProperty('src')) {
-    const splitedSrc = obj.src.split(':');
+  if (obj.hasOwnProperty("src")) {
+    const splitedSrc = obj.src.split(":");
     obj.src = `${splitedSrc[0]}:${splitedSrc[1]}:${id}`;
   }
 
@@ -76,15 +76,15 @@ export const replaceSrc = (obj: any, id: number) => {
 
 export function updateDependices(
   origSources: FullSources,
-  sources: SolcOutput['sources'],
-  config: Config,
+  sources: SolcOutput["sources"],
+  config: Config
 ) {
   for (const contract of Object.keys(sources)) {
     const ast = sources[contract]!.ast;
     const origSource = origSources[contract]!;
     updateImports(ast, sources, config.root!);
     updateReferences(ast, sources, origSource.asts);
-    for (const contractDef of findAll('ContractDefinition', ast)) {
+    for (const contractDef of findAll("ContractDefinition", ast)) {
       const dependencies = contractDef.contractDependencies;
       ast.exportedSymbols[contractDef.name] = [contractDef.id];
       if (dependencies.length === 0) {
@@ -96,21 +96,21 @@ export function updateDependices(
         ast,
         sources,
         origSource.asts,
-        dependencies,
+        dependencies
       );
       const uniqParentIds = [...new Set(parentIds)];
       contractDef.contractDependencies = uniqParentIds;
       contractDef.linearizedBaseContracts = [contractDef.id].concat(
-        uniqParentIds,
+        uniqParentIds
       );
     }
   }
 }
 const updateFunctions = (
   ast: SourceUnit,
-  sources: SolcOutput['sources'],
+  sources: SolcOutput["sources"],
   origAsts: SourceUnit[],
-  dependencies: number[],
+  dependencies: number[]
 ) => {
   let parentIds: number[] = [];
 
@@ -120,7 +120,7 @@ const updateFunctions = (
     if (origParentAst) {
       const parentAst = sources[origParentAst.absolutePath]!.ast;
 
-      for (const func of findAll('FunctionDefinition', ast)) {
+      for (const func of findAll("FunctionDefinition", ast)) {
         if (func.baseFunctions) {
           const baseFuncId = func.baseFunctions[0]!;
           let funcSrc: string | undefined;
@@ -128,7 +128,7 @@ const updateFunctions = (
 
           for (const node of origParentAst.nodes) {
             if (
-              isNodeType('FunctionDefinition', node) &&
+              isNodeType("FunctionDefinition", node) &&
               node.id === baseFuncId
             ) {
               funcSrc = node.src;
@@ -139,12 +139,12 @@ const updateFunctions = (
           if (funcSrc) {
             for (const node of parentAst.nodes) {
               if (
-                isNodeType('FunctionDefinition', node) &&
+                isNodeType("FunctionDefinition", node) &&
                 node.src.slice(0, -1) == funcSrc!.slice(0, -1)
               ) {
                 func.baseFunctions = [node.id];
                 parentId = Object.values(parentAst.exportedSymbols).find(
-                  id => id![0] === node.id,
+                  (id) => id![0] === node.id
                 )![0];
                 break;
               }
@@ -164,10 +164,10 @@ const updateFunctions = (
 
 const updateImports = (
   ast: SourceUnit,
-  sources: SolcOutput['sources'],
-  rootPath: string,
+  sources: SolcOutput["sources"],
+  rootPath: string
 ) => {
-  for (const imp of findAll('ImportDirective', ast)) {
+  for (const imp of findAll("ImportDirective", ast)) {
     let absolutePath = imp.absolutePath;
     if (imp.absolutePath.startsWith(rootPath)) {
       absolutePath = imp.absolutePath.slice(rootPath.length + 1);
@@ -184,11 +184,11 @@ const updateImports = (
 
 const updateReferences = (
   ast: SourceUnit,
-  sources: SolcOutput['sources'],
-  origAsts: SourceUnit[],
+  sources: SolcOutput["sources"],
+  origAsts: SourceUnit[]
 ) => {
-  for (const imp of findAll('InheritanceSpecifier', ast)) {
-    if (!isNodeType('UserDefinedTypeName', imp.baseName)) {
+  for (const imp of findAll("InheritanceSpecifier", ast)) {
+    if (!isNodeType("UserDefinedTypeName", imp.baseName)) {
       continue;
     }
     const baseName = imp.baseName.name!;
@@ -199,7 +199,7 @@ const updateReferences = (
 
     imp.baseName.referencedDeclaration = realParentId;
     const splitedtypeIdentifier =
-      imp.baseName.typeDescriptions.typeIdentifier!.split('$');
+      imp.baseName.typeDescriptions.typeIdentifier!.split("$");
     imp.baseName.typeDescriptions.typeIdentifier = `${splitedtypeIdentifier[0]}${splitedtypeIdentifier[1]}$${realParentId}`;
   }
 };
@@ -219,15 +219,15 @@ export const renameAbsolutePaths = (root: string, asts: SourceUnit[]) => {
 
 export function sortASTByDependency(
   sources: SourceUnit[][],
-  solcOutput: SolcOutput,
+  solcOutput: SolcOutput
 ) {
   // Count the number of times each contract is inherited
   const dependencyCount: Map<string, number> = getDependenciesCount(sources);
 
   const sortedDependencyCount = Array.from(dependencyCount).sort(
-    (a, b) => b[1] - a[1],
+    (a, b) => b[1] - a[1]
   );
-  const sortedSources: SolcOutput['sources'] = {};
+  const sortedSources: SolcOutput["sources"] = {};
   let id = 0;
   let lastAstId = 0;
   sortedDependencyCount.reverse().forEach(([path]) => {
