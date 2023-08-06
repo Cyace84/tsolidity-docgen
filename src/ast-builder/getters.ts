@@ -1,10 +1,10 @@
-import { isMainContract } from './builder';
-import { SourceUnit } from 'solidity-ast';
-import { isNodeType } from 'solidity-ast/utils';
-import { FullSources, Sources } from './types';
-import fs from 'fs';
-import path from 'path';
-import { renameAbsolutePaths } from './ast-updater';
+import { isMainContract } from "./builder";
+import { SourceUnit } from "solidity-ast";
+import { isNodeType } from "solidity-ast/utils";
+import { FullSources, Sources } from "./types";
+import fs from "fs";
+import path from "path";
+import { renameAbsolutePaths } from "./ast-updater";
 
 /**
  * It takes a file path and returns the name of the contract
@@ -12,10 +12,10 @@ import { renameAbsolutePaths } from './ast-updater';
  * @returns The contract name
  */
 export function getContractName(filePath: string): string {
-  const pathArray = filePath.split('/');
-  const contractName = pathArray[pathArray.length - 1]!.split('.')[0];
+  const pathArray = filePath.split("/");
+  const contractName = pathArray[pathArray.length - 1]!.split(".")[0];
   if (!contractName) {
-    throw new Error('Contract name not found');
+    throw new Error("Contract name not found");
   }
   return contractName;
 }
@@ -30,7 +30,7 @@ export function getContractName(filePath: string): string {
 export const getMainAst = (
   asts: SourceUnit[],
   contractName: string,
-  astFullPath: string,
+  astFullPath: string
 ) => {
   let mainContract = null;
   for (const ast of asts) {
@@ -55,7 +55,7 @@ export const getMainAst = (
  */
 export const getParentAstFromContractId = (
   asts: SourceUnit[],
-  id: number,
+  id: number
 ): SourceUnit | undefined => {
   for (const ast of asts) {
     if (Object.values(ast.exportedSymbols).flat().includes(id)) {
@@ -87,9 +87,9 @@ export const getParentAstFromName = (asts: SourceUnit[], name: string) => {
  */
 export const getDependenciesCount = (sources: SourceUnit[][]) => {
   const dependencyCount = new Map<string, number>();
-  sources.forEach(source => {
+  sources.forEach((source) => {
     for (const ast of source) {
-      const contractDef = ast.nodes.find(isNodeType('ContractDefinition'))!;
+      const contractDef = ast.nodes.find(isNodeType("ContractDefinition"))!;
 
       const absolutePath = ast.absolutePath;
       if (!dependencyCount.has(absolutePath)) {
@@ -97,7 +97,7 @@ export const getDependenciesCount = (sources: SourceUnit[][]) => {
           absolutePath,
           contractDef.contractDependencies
             ? contractDef.contractDependencies.length
-            : 0,
+            : 0
         );
       }
     }
@@ -115,19 +115,19 @@ export const getDependenciesCount = (sources: SourceUnit[][]) => {
 export const getAstsFromSources = (astDir: string, root: string) => {
   const astSources = fs
     .readdirSync(astDir)
-    .filter(file => file.endsWith('.ast.json'))
-    .map(file => path.join(root, astDir, file));
+    .filter((file) => file.endsWith(".ast.json"))
+    .map((file) => path.join(root, astDir, file));
 
   const sources: Sources = {};
   const fullSources: FullSources = {};
-  astSources.forEach(astSourceFullPath => {
-    const astContent: SourceUnit[] = [require(astSourceFullPath) as SourceUnit];
+  astSources.forEach((astSourceFullPath) => {
+    const astContent: SourceUnit[] = require(astSourceFullPath) as SourceUnit[];
     const withNormalPathAsts = renameAbsolutePaths(root, astContent);
     const astContractName = getContractName(astSourceFullPath)!;
     const mainAst = getMainAst(
       withNormalPathAsts,
       astContractName,
-      astSourceFullPath,
+      astSourceFullPath
     );
     if (mainAst) {
       sources[mainAst.absolutePath] = mainAst;
@@ -148,21 +148,21 @@ export const getAstsFromSources = (astDir: string, root: string) => {
  */
 export const getContractsList = (
   contractsDir: string,
-  exclude: string[] = [],
+  exclude: string[] = []
 ) => {
   let contracts: string[] = [];
 
   const searchForContracts = (dir: string) => {
-    fs.readdirSync(dir).forEach(file => {
+    fs.readdirSync(dir).forEach((file) => {
       const filePath = path.join(dir, file);
       if (fs.statSync(filePath).isDirectory() && !exclude.includes(file)) {
         searchForContracts(filePath);
-      } else if (file.endsWith('sol')) {
-        contracts.push(`${dir.slice(contractsDir.length) + '/'}${file}`);
+      } else if (file.endsWith("sol")) {
+        contracts.push(`${dir.slice(contractsDir.length) + "/"}${file}`);
       }
     });
   };
 
   searchForContracts(contractsDir);
-  return contracts.map(file => file.slice(0, file.length));
+  return contracts.map((file) => file.slice(0, file.length));
 };
