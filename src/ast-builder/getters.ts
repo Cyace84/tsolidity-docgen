@@ -121,7 +121,7 @@ export const getAstsFromSources = (astDir: string, root: string) => {
   const sources: Sources = {};
   const fullSources: FullSources = {};
   astSources.forEach(astSourceFullPath => {
-    const astContent: SourceUnit[] = [require(astSourceFullPath) as SourceUnit];
+    const astContent: SourceUnit[] = require(astSourceFullPath) as SourceUnit[];
     const withNormalPathAsts = renameAbsolutePaths(root, astContent);
     const astContractName = getContractName(astSourceFullPath)!;
     const mainAst = getMainAst(

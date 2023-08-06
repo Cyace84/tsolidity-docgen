@@ -2,7 +2,7 @@ import fs from "fs";
 import { execSync } from "child_process";
 import { Config } from "../config";
 import { getAstsFromSources, getContractsList } from "./getters";
-import { basename, join, resolve } from "path";
+import { basename, extname, join, resolve } from "path";
 
 const createDirectoryIfNotExists = (dir: string) => {
   if (!fs.existsSync(dir)) {
@@ -51,6 +51,7 @@ export const compileAst = (config: Config) => {
   deleteDirectoryIfExists(ast_cache_path);
   compileExternalAst(config);
   renameAstFiles(astOutputPath);
+  wrapAstInArray(astOutputPath);
 };
 
 /**
@@ -90,6 +91,30 @@ const renameAstFiles = (dir: string) => {
       const newFileName = basename(file, ".tsol_json.ast") + ".ast.json";
       const newPath = join(dir, newFileName);
       fs.renameSync(oldPath, newPath);
+    }
+  });
+};
+
+const wrapAstInArray = (dir: string) => {
+  const files = fs.readdirSync(dir);
+
+  files.forEach((file) => {
+    if (extname(file) === ".json") {
+      const filePath = join(dir, file);
+      const content = fs.readFileSync(filePath, "utf8");
+      let jsonContent;
+
+      try {
+        jsonContent = JSON.parse(content);
+      } catch (error) {
+        console.error(`Error parsing file ${file}:`, error);
+        return;
+      }
+
+      if (!Array.isArray(jsonContent)) {
+        const wrappedContent = [jsonContent];
+        fs.writeFileSync(filePath, JSON.stringify(wrappedContent, null, 2));
+      }
     }
   });
 };
