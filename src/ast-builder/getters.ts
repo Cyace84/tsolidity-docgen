@@ -114,7 +114,7 @@ export const getDependenciesCount = (sources: SourceUnit[][]) => {
  */
 export const getAstsFromSources = (astDir: string, root: string) => {
   const astSources = fs
-    .readdirSync(astDir)
+    .readdirSync(path.resolve(root, astDir))
     .filter((file) => file.endsWith(".ast.json"))
     .map((file) => path.join(root, astDir, file));
 
