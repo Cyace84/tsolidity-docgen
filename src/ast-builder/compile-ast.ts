@@ -36,19 +36,19 @@ export const compileAst = async (config: Config) => {
   deleteDirectoryIfExists(astOutputPath);
 
   let astCachePath = `ast-cache`;
-  let astPath = resolve(process.cwd(), "ast");
+  let astPath = resolve(config.root!, "ast");
 
-  createDirectoryIfNotExists(resolve(process.cwd(), astCachePath));
+  createDirectoryIfNotExists(resolve(config.root!, astCachePath));
   createDirectoryIfNotExists(astPath);
 
   contracts.forEach((contract) => {
     execSync(
       `${config.compilerPath} --ast-compact-json ${config.sourcesDir}/${contract} --output-dir=$PWD/${astCachePath}`
     );
-    moveFiles(resolve(process.cwd(), astCachePath), astOutputPath);
+    moveFiles(resolve(config.root!, astCachePath), astOutputPath);
   });
 
-  deleteDirectoryIfExists(resolve(process.cwd(), astCachePath));
+  deleteDirectoryIfExists(resolve(config.root!, astCachePath));
   compileExternalAst(config);
   renameAstFiles(astOutputPath);
   wrapAstInArray(astOutputPath);
@@ -68,9 +68,9 @@ export const compileExternalAst = async (config: Config) => {
   let astOutputPath = resolve(config.root!, config.astOutputDir!);
 
   let astCachePath = `ast-cache`;
-  let astPath = resolve(process.cwd(), "ast");
+  let astPath = resolve(config.root!, "ast");
 
-  createDirectoryIfNotExists(resolve(process.cwd(), astCachePath));
+  createDirectoryIfNotExists(resolve(config.root!, astCachePath));
   createDirectoryIfNotExists(astPath);
 
   Object.values(fullSources).forEach((source) => {
@@ -82,10 +82,10 @@ export const compileExternalAst = async (config: Config) => {
         );
       }
     }
-    moveFiles(resolve(process.cwd(), astCachePath), astOutputPath);
+    moveFiles(resolve(config.root!, astCachePath), astOutputPath);
   });
 
-  deleteDirectoryIfExists(resolve(process.cwd(), astCachePath));
+  deleteDirectoryIfExists(resolve(config.root!, astCachePath));
 };
 
 const renameAstFiles = (dir: string) => {
