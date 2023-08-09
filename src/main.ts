@@ -32,7 +32,7 @@ export async function main(
     await fs.writeFile(outputFile, contents);
   }
 
-  await fs.rm(path.resolve(config.root, config.astOutputDir), {
-    recursive: true,
-  });
+  // await fs.rm(path.resolve(config.root, config.astOutputDir), {
+  //   recursive: true,
+  // });
 }
