@@ -49,7 +49,6 @@ export const compileAst = async (config: Config) => {
   });
 
   deleteDirectoryIfExists(astCachePath);
-  renameAstFiles(astOutputPath);
   compileExternalAst(config);
   renameAstFiles(astOutputPath);
   wrapAstInArray(astOutputPath);

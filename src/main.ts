@@ -27,6 +27,7 @@ export async function main(
   replaceAdocReferences(renderedSite, config.sourcesDir);
 
   for (const { id, contents } of renderedSite) {
+    console.log("================ id :", id);
     const outputFile = path.resolve(config.root, config.outputDir, id);
     await fs.mkdir(path.dirname(outputFile), { recursive: true });
     await fs.writeFile(outputFile, contents);
