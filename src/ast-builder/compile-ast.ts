@@ -49,6 +49,7 @@ export const compileAst = async (config: Config) => {
   });
 
   deleteDirectoryIfExists(astCachePath);
+  renameAstFiles(astOutputPath);
   compileExternalAst(config);
   renameAstFiles(astOutputPath);
   wrapAstInArray(astOutputPath);
@@ -65,8 +66,6 @@ export const compileExternalAst = async (config: Config) => {
     config.root!
   );
 
-  let astOutputPath = resolve(config.root!, config.astOutputDir!);
-
   let astCachePath = resolve(config.root!, `ast-cache`);
   let astPath = resolve(config.root!, "ast");
 
@@ -82,7 +81,7 @@ export const compileExternalAst = async (config: Config) => {
         );
       }
     }
-    moveFiles(astCachePath, astOutputPath);
+    moveFiles(astCachePath, astPath);
   });
 
   deleteDirectoryIfExists(astCachePath);
