@@ -19,7 +19,8 @@ export async function generateHTMLFiles(config: Config): Promise<void> {
       }
     }
     const filesInPath = await fs.promises.readdir(config.outputDir!);
-    if (filesInPath.length === 0) {
+    const adocFiles = filesInPath.filter((file) => file.endsWith(".adoc"));
+    if (adocFiles.length === 0) {
       throw new Error("No adoc files found!!");
     }
     for (const file of filesInPath) {
