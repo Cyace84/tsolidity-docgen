@@ -5,6 +5,7 @@ import { Build, buildSite } from "./site";
 import { Config, defaults } from "./config";
 import { loadTemplates } from "./templates";
 import { replaceAdocReferences } from "./utils/update-paths";
+import { error } from "console";
 
 /**
  * Given a set of builds (i.e. solc outputs) and a user configuration, this
@@ -25,15 +26,13 @@ export async function main(
   const site = buildSite(builds, config, templates.properties ?? {});
   const renderedSite = render(site, templates, config.collapseNewlines);
   replaceAdocReferences(renderedSite, config.sourcesDir);
-
   for (const { id, contents } of renderedSite) {
-    console.log("================ id :", id);
     const outputFile = path.resolve(config.root, config.outputDir, id);
     await fs.mkdir(path.dirname(outputFile), { recursive: true });
     await fs.writeFile(outputFile, contents);
   }
 
-  // await fs.rm(path.resolve(config.root, config.astOutputDir), {
-  //   recursive: true,
-  // });
+  await fs.rm(path.resolve(config.root, config.astOutputDir), {
+    recursive: true,
+  });
 }
