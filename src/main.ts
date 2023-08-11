@@ -24,7 +24,12 @@ export async function main(
     config.templates
   );
   const site = buildSite(builds, config, templates.properties ?? {});
-  const renderedSite = render(site, templates, config.collapseNewlines);
+  const renderedSite = render(
+    site,
+    templates,
+    config.sourcesDir!,
+    config.collapseNewlines
+  );
   replaceAdocReferences(renderedSite, config.sourcesDir);
   for (const { id, contents } of renderedSite) {
     const outputFile = path.resolve(config.root, config.outputDir, id);
