@@ -67,7 +67,7 @@ function readmeHelper(
     ])
   );
   return new H.SafeString(
-    H.compile(fs.readFileSync(join(srcDir, path), "utf8"))(renderedItems, opts)
+    H.compile(fs.readFileSync(path, "utf8"))(renderedItems, opts)
   );
 }
 
