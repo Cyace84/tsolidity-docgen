@@ -31,6 +31,7 @@ export async function main(
     config.collapseNewlines
   );
   replaceAdocReferences(renderedSite, config.sourcesDir);
+  if (renderedSite.length <= 0) throw new Error(`Sites not generated`);
   for (const { id, contents } of renderedSite) {
     const outputFile = path.resolve(config.root, config.outputDir, id);
     await fs.mkdir(path.dirname(outputFile), { recursive: true });

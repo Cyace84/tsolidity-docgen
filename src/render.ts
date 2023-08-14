@@ -3,7 +3,7 @@ import { Site, Page, DocItemWithContext, DOC_ITEM_CONTEXT } from "./site";
 import { Templates } from "./templates";
 import { itemType } from "./utils/item-type";
 import fs from "fs";
-import { join } from "path";
+import { join, resolve } from "path";
 
 export interface RenderedPage {
   id: string;
@@ -67,7 +67,9 @@ function readmeHelper(
     ])
   );
   return new H.SafeString(
-    H.compile(fs.readFileSync(path, "utf8"))(renderedItems, opts)
+    H.compile(
+      fs.readFileSync(resolve(srcDir.replace("/contracts", ""), path), "utf8")
+    )(renderedItems, opts)
   );
 }
 

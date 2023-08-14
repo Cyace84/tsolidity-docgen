@@ -30,7 +30,8 @@ export function getContractName(filePath: string): string {
 export const getMainAst = (
   asts: SourceUnit[],
   contractName: string,
-  astFullPath: string
+  astFullPath: string,
+  sourcesDir: string
 ) => {
   let mainContract = null;
   for (const ast of asts) {
@@ -38,7 +39,7 @@ export const getMainAst = (
       ast.absolutePath.endsWith(`${contractName}.sol`) ||
       ast.absolutePath.endsWith(`${contractName}.tsol`)
     ) {
-      if (isMainContract(ast.absolutePath, astFullPath)) {
+      if (isMainContract(ast.absolutePath, astFullPath, sourcesDir)) {
         mainContract = ast;
       }
     }
@@ -112,7 +113,11 @@ export const getDependenciesCount = (sources: SourceUnit[][]) => {
  * @returns An object with the absolute path of the contract as the key and the contract's AST as the
  * value.
  */
-export const getAstsFromSources = (astDir: string, root: string) => {
+export const getAstsFromSources = (
+  astDir: string,
+  root: string,
+  sourcesDir: string
+) => {
   const astSources = fs
     .readdirSync(path.resolve(root, astDir))
     .filter((file) => file.endsWith(".ast.json"))
@@ -127,7 +132,8 @@ export const getAstsFromSources = (astDir: string, root: string) => {
     const mainAst = getMainAst(
       withNormalPathAsts,
       astContractName,
-      astSourceFullPath
+      astSourceFullPath,
+      sourcesDir
     );
     if (mainAst) {
       sources[mainAst.absolutePath] = mainAst;

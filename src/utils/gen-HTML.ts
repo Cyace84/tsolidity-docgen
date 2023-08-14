@@ -1,9 +1,31 @@
 import Processor from "asciidoctor";
 import fs from "fs";
-import { extname, resolve } from "path";
+import { extname, join, resolve } from "path";
 import { Config } from "../config";
 const processor = Processor();
 
+function searchFilesWithExtension(folderPath: string): string[] {
+  let results: string[] = [];
+
+  function searchRecursively(currentPath: string) {
+    const files = fs.readdirSync(currentPath);
+
+    files.forEach((file) => {
+      const filePath = resolve(currentPath, file);
+      const stat = fs.statSync(filePath);
+
+      if (stat.isDirectory()) {
+        searchRecursively(filePath);
+      } else if (extname(filePath) === ".adoc") {
+        results.push(filePath);
+      }
+    });
+  }
+
+  searchRecursively(folderPath);
+
+  return results;
+}
 export async function generateHTMLFiles(config: Config): Promise<void> {
   try {
     const distDirPath = resolve(config.root!, config.outputDir!, "dist");
@@ -20,18 +42,16 @@ export async function generateHTMLFiles(config: Config): Promise<void> {
         await fs.promises.unlink(resolve(distDirPath, file));
       }
     }
-    const filesInPath = await fs.promises.readdir(outputDirPath);
-    const adocFiles = filesInPath.filter((file) => file.endsWith(".adoc"));
-    if (adocFiles.length === 0) {
+    const filesInPath = searchFilesWithExtension(outputDirPath);
+
+    if (filesInPath.length === 0) {
       throw new Error("No adoc files found!!");
     }
-    for (const file of filesInPath) {
-      if (extname(file) === ".adoc") {
-        await processor.convertFile(resolve(outputDirPath, file), {
-          to_dir: distDirPath,
-        });
-      }
-    }
+    filesInPath.forEach(async (file) => {
+      processor.convertFile(file, {
+        to_dir: distDirPath,
+      });
+    });
   } catch (err: any) {
     throw new Error(err.message);
   }

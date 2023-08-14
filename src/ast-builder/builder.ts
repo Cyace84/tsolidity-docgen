@@ -9,7 +9,7 @@ import {
 } from "./ast-updater";
 import { Config } from "../config";
 import { Build } from "../site";
-import path from "path";
+import path, { resolve } from "path";
 
 import { compileAst } from "./compile-ast";
 
@@ -24,20 +24,33 @@ const createRawOutput = (sources: Sources) => {
   return output;
 };
 
-const createInput = (solcOutput: SolcOutput) => {
+const createInput = (solcOutput: SolcOutput, sourcesDir: string) => {
   const sources = solcOutput.sources;
   const SolcInput: SolcInput = { sources: {} };
-  for (const key of Object.keys(sources)) {
-    const fileContent = fs.readFileSync(key, "utf8").toString();
+  for (let key of Object.keys(sources)) {
+    const tempKey = key.startsWith("contracts")
+      ? resolve(sourcesDir.replace("/contracts", "/"), key)
+      : resolve(sourcesDir.replace("/contracts", "/node_modules"), key);
+    const fileContent = fs.readFileSync(tempKey, "utf8").toString();
     SolcInput.sources[key] = { content: fileContent };
   }
   return SolcInput;
 };
 
-export function isMainContract(absolutePath: string, astPath: string) {
+export function isMainContract(
+  absolutePath: string,
+  astPath: string,
+  sourcesDir: string
+) {
+  // checking if its in the project main contracts ot=r and third party contract
+  sourcesDir = absolutePath.startsWith("contracts")
+    ? sourcesDir.replace("/contracts", "")
+    : sourcesDir.replace("/contracts", "/node_modules");
   // Extract the contract name from absolute path
-  if (!fileExists(absolutePath) || !fileExists(astPath)) {
-    throw new Error("File does not exist");
+  if (!fileExists(resolve(sourcesDir, absolutePath)) || !fileExists(astPath)) {
+    throw new Error(`File does not exist :${resolve(sourcesDir, absolutePath)},
+    ${absolutePath},
+    ${astPath}`);
   }
   const contractName = getContractName(absolutePath);
 
@@ -67,7 +80,8 @@ export const makeBuild = async (
   compileAst(config);
   const { sources: astSources, fullSources } = getAstsFromSources(
     config.astOutputDir!,
-    config.root!
+    config.root!,
+    config.sourcesDir!
   )!;
   const solcOutput = createRawOutput(astSources);
   const sourcesList = Object.values(fullSources).map((source) => source.asts);
@@ -77,7 +91,7 @@ export const makeBuild = async (
   const ph = path.join(config.root!, "build/astBuild.json");
   fs.writeFileSync(ph, JSON.stringify(sortedSources, null, 2));
   solcOutput.sources = sortedSources;
-  const solcInput = createInput(solcOutput);
+  const solcInput = createInput(solcOutput, config.sourcesDir!);
   const build: Build = {
     input: solcInput,
     output: solcOutput,

@@ -40,10 +40,16 @@ export const compileAst = async (config: Config) => {
 
   createDirectoryIfNotExists(astCachePath);
   createDirectoryIfNotExists(astPath);
-
+  const nodeModules =
+    config.sourcesDir != "contracts"
+      ? `--base-path ${config.sourcesDir?.replace(
+          "/contracts",
+          ""
+        )} -i ${config.sourcesDir?.replace("/contracts", "/node_modules")}`
+      : "";
   contracts.forEach((contract) => {
     execSync(
-      `${config.compilerPath} --ast-compact-json ${config.sourcesDir}/${contract} --output-dir=${astCachePath}`
+      `${config.compilerPath} --ast-compact-json ${config.sourcesDir}/${contract} --output-dir=${astCachePath} ${nodeModules}`
     );
     moveFiles(astCachePath, astOutputPath);
   });
@@ -62,7 +68,8 @@ export const compileAst = async (config: Config) => {
 export const compileExternalAst = async (config: Config) => {
   const { fullSources } = getAstsFromSources(
     config.astOutputDir!,
-    config.root!
+    config.root!,
+    config.sourcesDir!
   );
 
   let astCachePath = resolve(config.root!, `ast-cache`);
@@ -70,13 +77,19 @@ export const compileExternalAst = async (config: Config) => {
 
   createDirectoryIfNotExists(astCachePath);
   createDirectoryIfNotExists(astPath);
-
+  const nodeModules =
+    config.sourcesDir != "contracts"
+      ? `--base-path ${config.sourcesDir?.replace(
+          "/contracts",
+          ""
+        )} -i ${config.sourcesDir?.replace("contracts", "node_modules")}`
+      : "";
   Object.values(fullSources).forEach((source) => {
     for (const ast of source.asts) {
       const absolutePath = ast.absolutePath;
       if (!absolutePath.startsWith(config.sourcesDir!)) {
         execSync(
-          `${config.compilerPath} --ast-compact-json $PWD/${absolutePath} --output-dir=${astCachePath}`
+          `${config.compilerPath} --ast-compact-json $PWD/${config.sourcesDir}/${absolutePath} --output-dir=${astCachePath} ${nodeModules}`
         );
       }
     }

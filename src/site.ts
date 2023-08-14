@@ -1,4 +1,4 @@
-import path from "path";
+import path, { resolve } from "path";
 import { ContractDefinition, SourceUnit } from "solidity-ast";
 import { SolcOutput, SolcInput } from "solidity-ast/solc";
 import {
@@ -98,10 +98,11 @@ export function buildSite(
       const isNewFile = !seen.has(ast.absolutePath);
       seen.add(ast.absolutePath);
 
-      const relativePath = path.relative(
-        siteConfig.sourcesDir,
-        ast.absolutePath
-      );
+      const sourcesDir = ast.absolutePath.startsWith("contracts")
+        ? siteConfig.sourcesDir.replace("/contracts", "")
+        : siteConfig.sourcesDir.replace("/contracts", "/node_modules");
+
+      const relativePath = path.relative(sourcesDir, ast.absolutePath);
       const file = Object.assign(ast, { relativePath });
 
       for (const topLevelItem of file.nodes) {
