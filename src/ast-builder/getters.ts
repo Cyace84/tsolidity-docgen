@@ -146,13 +146,16 @@ export const getAstsFromSources = (astDir: string, root: string) => {
  * @param {string} contractsDir - The directory where your contracts are located.
  * @returns An array of strings.
  */
-export const getContractsList = (contractsDir: string) => {
+export const getContractsList = (
+  contractsDir: string,
+  exclude: string[] = [],
+) => {
   let contracts: string[] = [];
 
   const searchForContracts = (dir: string) => {
     fs.readdirSync(dir).forEach(file => {
       const filePath = path.join(dir, file);
-      if (fs.statSync(filePath).isDirectory()) {
+      if (fs.statSync(filePath).isDirectory() && !exclude.includes(file)) {
         searchForContracts(filePath);
       } else if (file.endsWith('sol')) {
         contracts.push(`${dir.slice(contractsDir.length) + '/'}${file}`);
