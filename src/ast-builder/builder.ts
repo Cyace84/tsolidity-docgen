@@ -1,17 +1,17 @@
-import fs from 'fs';
-import { SolcInput, SolcOutput } from 'solidity-ast/solc';
-import { Sources } from './types';
-import { getContractName, getAstsFromSources } from './getters';
+import fs from "fs";
+import { SolcInput, SolcOutput } from "solidity-ast/solc";
+import { Sources } from "./types";
+import { getContractName, getAstsFromSources } from "./getters";
 import {
   replaceSrc,
   sortASTByDependency,
   updateDependices,
-} from './ast-updater';
-import { Config } from '../config';
-import { Build } from '../site';
-import path from 'path';
+} from "./ast-updater";
+import { Config } from "../config";
+import { Build } from "../site";
+import path from "path";
 
-import { compileAst } from './compile-ast';
+import { compileAst } from "./compile-ast";
 
 const createRawOutput = (sources: Sources) => {
   const output: SolcOutput = { sources: {} };
@@ -28,7 +28,7 @@ const createInput = (solcOutput: SolcOutput) => {
   const sources = solcOutput.sources;
   const SolcInput: SolcInput = { sources: {} };
   for (const key of Object.keys(sources)) {
-    const fileContent = fs.readFileSync(key, 'utf8').toString();
+    const fileContent = fs.readFileSync(key, "utf8").toString();
     SolcInput.sources[key] = { content: fileContent };
   }
   return SolcInput;
@@ -37,7 +37,7 @@ const createInput = (solcOutput: SolcOutput) => {
 export function isMainContract(absolutePath: string, astPath: string) {
   // Extract the contract name from absolute path
   if (!fileExists(absolutePath) || !fileExists(astPath)) {
-    throw new Error('File does not exist');
+    throw new Error("File does not exist");
   }
   const contractName = getContractName(absolutePath);
 
@@ -52,7 +52,7 @@ function fileExists(filePath: string) {
   try {
     return fs.statSync(filePath).isFile();
   } catch (err: any) {
-    if (err.code === 'ENOENT') {
+    if (err.code === "ENOENT") {
       return false;
     } else {
       throw err;
@@ -62,19 +62,19 @@ function fileExists(filePath: string) {
 
 export const makeBuild = async (
   config: Config,
-  contractList: string[] = [],
+  contractList: string[] = []
 ) => {
   compileAst(config);
   const { sources: astSources, fullSources } = getAstsFromSources(
     config.astOutputDir!,
-    config.root!,
+    config.root!
   )!;
   const solcOutput = createRawOutput(astSources);
-  const sourcesList = Object.values(fullSources).map(source => source.asts);
+  const sourcesList = Object.values(fullSources).map((source) => source.asts);
 
   const sortedSources = sortASTByDependency(sourcesList, solcOutput);
   updateDependices(fullSources, sortedSources, config);
-  const ph = path.join(config.root!, 'build/astBuild.json');
+  const ph = path.join(config.root!, "build/astBuild.json");
   fs.writeFileSync(ph, JSON.stringify(sortedSources, null, 2));
   solcOutput.sources = sortedSources;
   const solcInput = createInput(solcOutput);
