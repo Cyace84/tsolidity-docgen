@@ -1,6 +1,6 @@
 {
   "name": "tsolidity-docgen-dev",
-  "version": "0.66.0-beta.04",
+  "version": "0.66.0-beta.05",
   "description": "Fork from OpenZeppelin/solidity-docgen. Documentation generator for Ton-Solidity smart contracts.",
   "repository": "github:cyace84/tsolidity-docgen",
   "keywords": [
