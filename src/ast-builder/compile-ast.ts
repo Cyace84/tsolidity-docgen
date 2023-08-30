@@ -2,7 +2,8 @@ import fs from "fs";
 import { execSync } from "child_process";
 import { Config } from "../config";
 import { getAstsFromSources, getContractsList } from "./getters";
-import { basename, extname, join, resolve } from "path";
+
+import { basename, join, extname, resolve } from "path";
 
 const createDirectoryIfNotExists = (dir: string) => {
   if (!fs.existsSync(dir)) {
@@ -35,20 +36,26 @@ export const compileAst = (config: Config) => {
   let astOutputPath = resolve(config.root!, config.astOutputDir!);
   deleteDirectoryIfExists(astOutputPath);
 
-  let ast_cache_path = `ast-cache`;
-  let ast_path = resolve(process.cwd(), "ast");
+  let astCachePath = resolve(config.root!, `ast-cache`);
+  let astPath = resolve(config.root!, "ast");
 
-  createDirectoryIfNotExists(ast_cache_path);
-  createDirectoryIfNotExists(ast_path);
-
+  createDirectoryIfNotExists(astCachePath);
+  createDirectoryIfNotExists(astPath);
+  const nodeModules =
+    config.sourcesDir != "contracts"
+      ? `--base-path ${config.sourcesDir?.replace(
+          "/contracts",
+          ""
+        )} -i ${config.sourcesDir?.replace("/contracts", "/node_modules")}`
+      : "";
   contracts.forEach((contract) => {
     execSync(
-      `${config.compilerPath} --ast-compact-json ${config.sourcesDir}/${contract} --output-dir=${ast_cache_path}`
+      `${config.compilerPath} --ast-compact-json ${config.sourcesDir}/${contract} --output-dir=${astCachePath} ${nodeModules}`
     );
-    moveFiles(ast_cache_path, astOutputPath);
+    moveFiles(astCachePath, astOutputPath);
   });
 
-  deleteDirectoryIfExists(ast_cache_path);
+  deleteDirectoryIfExists(astCachePath);
   compileExternalAst(config);
   renameAstFiles(astOutputPath);
   wrapAstInArray(astOutputPath);
@@ -62,16 +69,75 @@ export const compileAst = (config: Config) => {
 export const compileExternalAst = async (config: Config) => {
   const { fullSources } = getAstsFromSources(
     config.astOutputDir!,
-    config.root!
+
+    config.root!,
+    config.sourcesDir!
   );
 
+  let astCachePath = resolve(config.root!, `ast-cache`);
+  let astPath = resolve(config.root!, "ast");
+
+  createDirectoryIfNotExists(astCachePath);
+  createDirectoryIfNotExists(astPath);
+  const nodeModules =
+    config.sourcesDir != "contracts"
+      ? `--base-path ${config.sourcesDir?.replace(
+          "/contracts",
+          ""
+        )} -i ${config.sourcesDir?.replace("contracts", "node_modules")}`
+      : "";
   Object.values(fullSources).forEach((source) => {
     for (const ast of source.asts) {
       const absolutePath = ast.absolutePath;
       if (!absolutePath.startsWith(config.sourcesDir!)) {
         execSync(
-          `${config.compilerPath} --ast-compact-json $PWD/${absolutePath} --output-dir=$PWD/${config.astOutputDir}`
+          `${config.compilerPath} --ast-compact-json $PWD/${config.sourcesDir}/${absolutePath} --output-dir=${astCachePath} ${nodeModules}`
         );
+      }
+    }
+    moveFiles(astCachePath, astPath);
+  });
+
+  deleteDirectoryIfExists(astCachePath);
+};
+
+const renameAstFiles = (dir: string) => {
+  const files = fs.readdirSync(dir);
+
+  files.forEach((file) => {
+    if (file.endsWith(".sol_json.ast")) {
+      const oldPath = join(dir, file);
+      const newFileName = basename(file, ".sol_json.ast") + ".ast.json";
+      const newPath = join(dir, newFileName);
+      fs.renameSync(oldPath, newPath);
+    } else if (file.endsWith(".tsol_json.ast")) {
+      const oldPath = join(dir, file);
+      const newFileName = basename(file, ".tsol_json.ast") + ".ast.json";
+      const newPath = join(dir, newFileName);
+      fs.renameSync(oldPath, newPath);
+    }
+  });
+};
+
+const wrapAstInArray = (dir: string) => {
+  const files = fs.readdirSync(dir);
+
+  files.forEach((file) => {
+    if (extname(file) === ".json") {
+      const filePath = join(dir, file);
+      const content = fs.readFileSync(filePath, "utf8");
+      let jsonContent;
+
+      try {
+        jsonContent = JSON.parse(content);
+      } catch (error) {
+        console.error(`Error parsing file ${file}:`, error);
+        return;
+      }
+
+      if (!Array.isArray(jsonContent)) {
+        const wrappedContent = [jsonContent];
+        fs.writeFileSync(filePath, JSON.stringify(wrappedContent, null, 2));
       }
     }
   });

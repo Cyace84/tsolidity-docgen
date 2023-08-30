@@ -1,8 +1,9 @@
-import Handlebars, { RuntimeOptions } from 'handlebars';
-import { Site, Page, DocItemWithContext, DOC_ITEM_CONTEXT } from './site';
-import { Templates } from './templates';
-import { itemType } from './utils/item-type';
-import fs from 'fs';
+import Handlebars, { RuntimeOptions } from "handlebars";
+import { Site, Page, DocItemWithContext, DOC_ITEM_CONTEXT } from "./site";
+import { Templates } from "./templates";
+import { itemType } from "./utils/item-type";
+import fs from "fs";
+import { join, resolve } from "path";
 
 export interface RenderedPage {
   id: string;
@@ -15,13 +16,18 @@ interface TemplateOptions {
   };
 }
 
-export function render(site: Site, templates: Templates, collapseNewlines?: boolean): RenderedPage[] {
-  const renderPage = buildRenderer(templates);
+export function render(
+  site: Site,
+  templates: Templates,
+  srcDir: string,
+  collapseNewlines?: boolean
+): RenderedPage[] {
+  const renderPage = buildRenderer(templates, srcDir);
   const renderedPages: RenderedPage[] = [];
   for (const page of site.pages) {
     let contents = renderPage(page, { data: { site } });
     if (collapseNewlines) {
-      contents = contents.replace(/\n{3,}/g, '\n\n');
+      contents = contents.replace(/\n{3,}/g, "\n\n");
     }
     renderedPages.push({
       id: page.id,
@@ -31,11 +37,14 @@ export function render(site: Site, templates: Templates, collapseNewlines?: bool
   return renderedPages;
 }
 
-export const itemPartialName = (item: DocItemWithContext) => itemType(item).replace(/ /g, '-').toLowerCase();
+export const itemPartialName = (item: DocItemWithContext) =>
+  itemType(item).replace(/ /g, "-").toLowerCase();
 
 function itemPartial(item: DocItemWithContext, options?: RuntimeOptions) {
   if (!item.__item_context) {
-    throw new Error(`Partial 'item' used in unsupported context (not a doc item)`);
+    throw new Error(
+      `Partial 'item' used in unsupported context (not a doc item)`
+    );
   }
   const partial = options?.partials?.[itemPartialName(item)];
   if (!partial) {
@@ -44,22 +53,30 @@ function itemPartial(item: DocItemWithContext, options?: RuntimeOptions) {
   return partial(item, options);
 }
 
-function readmeHelper(H: typeof Handlebars, path: string, opts: RuntimeOptions) {
+function readmeHelper(
+  H: typeof Handlebars,
+  path: string,
+  opts: RuntimeOptions,
+  srcDir: string
+) {
   const items: DocItemWithContext[] = opts.data.root.items;
   const renderedItems = Object.fromEntries(
-    items.map(item => [
+    items.map((item) => [
       item.name,
-      new H.SafeString(
-        H.compile('{{>item}}')(item, opts),
-      ),
-    ]),
+      new H.SafeString(H.compile("{{>item}}")(item, opts)),
+    ])
   );
   return new H.SafeString(
-    H.compile(fs.readFileSync(path, 'utf8'))(renderedItems, opts),
+    H.compile(
+      fs.readFileSync(resolve(srcDir.replace("/contracts", ""), path), "utf8")
+    )(renderedItems, opts)
   );
 }
 
-function buildRenderer(templates: Templates): (page: Page, options: TemplateOptions) => string {
+function buildRenderer(
+  templates: Templates,
+  srcDir: string
+): (page: Page, options: TemplateOptions) => string {
   const pageTemplate = templates.partials?.page;
   if (pageTemplate === undefined) {
     throw new Error(`Missing 'page' template`);
@@ -75,13 +92,15 @@ function buildRenderer(templates: Templates): (page: Page, options: TemplateOpti
     });
   }
 
-  H.registerHelper('readme', (path: string, opts: RuntimeOptions) => readmeHelper(H, path, opts));
+  H.registerHelper("readme", (path: string, opts: RuntimeOptions) =>
+    readmeHelper(H, path, opts, srcDir)
+  );
 
   for (const [name, fn] of Object.entries(templates.helpers ?? {})) {
     H.registerHelper(name, fn);
   }
 
-  H.registerPartial('item', itemPartial);
+  H.registerPartial("item", itemPartial);
 
-  return H.compile('{{>page}}');
+  return H.compile("{{>page}}");
 }
