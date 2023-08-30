@@ -9,6 +9,7 @@ import {
 } from "./ast-updater";
 import { Config } from "../config";
 import { Build } from "../site";
+
 import path, { resolve } from "path";
 
 import { compileAst } from "./compile-ast";
@@ -27,11 +28,13 @@ const createRawOutput = (sources: Sources) => {
 const createInput = (solcOutput: SolcOutput, sourcesDir: string) => {
   const sources = solcOutput.sources;
   const SolcInput: SolcInput = { sources: {} };
+
   for (let key of Object.keys(sources)) {
     const tempKey = key.startsWith("contracts")
       ? resolve(sourcesDir.replace("/contracts", "/"), key)
       : resolve(sourcesDir.replace("/contracts", "/node_modules"), key);
     const fileContent = fs.readFileSync(tempKey, "utf8").toString();
+
     SolcInput.sources[key] = { content: fileContent };
   }
   return SolcInput;
