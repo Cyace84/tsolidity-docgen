@@ -1,18 +1,14 @@
-import fs from "fs";
-import { SolcInput, SolcOutput } from "solidity-ast/solc";
-import { Sources } from "./types";
-import { getContractName, getAstsFromSources } from "./getters";
-import {
-  replaceSrc,
-  sortASTByDependency,
-  updateDependices,
-} from "./ast-updater";
-import { Config } from "../config";
-import { Build } from "../site";
+import fs from 'fs';
+import { SolcInput, SolcOutput } from 'solidity-ast/solc';
+import { Sources } from './types';
+import { getContractName, getAstsFromSources } from './getters';
+import { replaceSrc, sortASTByDependency, updateDependices } from './ast-updater';
+import { Config } from '../config';
+import { Build } from '../site';
 
-import path, { resolve } from "path";
+import path, { resolve } from 'path';
 
-import { compileAst } from "./compile-ast";
+import { compileAst } from './compile-ast';
 
 const createRawOutput = (sources: Sources) => {
   const output: SolcOutput = { sources: {} };
@@ -25,36 +21,38 @@ const createRawOutput = (sources: Sources) => {
   return output;
 };
 
-const createInput = (solcOutput: SolcOutput, sourcesDir: string) => {
+// const createInput = (solcOutput: SolcOutput, sourcesDir: string) => {
+//   const sources = solcOutput.sources;
+//   const SolcInput: SolcInput = { sources: {} };
+
+//   for (let key of Object.keys(sources)) {
+//     const tempKey = key.startsWith("contracts")
+//       ? resolve(sourcesDir.replace("/contracts", "/"), key)
+//       : resolve(sourcesDir.replace("/contracts", "/node_modules"), key);
+//     const fileContent = fs.readFileSync(tempKey, "utf8").toString();
+
+//     SolcInput.sources[key] = { content: fileContent };
+//   }
+//   return SolcInput;
+// };
+
+const createInput = (solcOutput: SolcOutput) => {
   const sources = solcOutput.sources;
   const SolcInput: SolcInput = { sources: {} };
-
-  for (let key of Object.keys(sources)) {
-    const tempKey = key.startsWith("contracts")
-      ? resolve(sourcesDir.replace("/contracts", "/"), key)
-      : resolve(sourcesDir.replace("/contracts", "/node_modules"), key);
-    const fileContent = fs.readFileSync(tempKey, "utf8").toString();
-
+  for (const key of Object.keys(sources)) {
+    const fileContent = fs.readFileSync(key, "utf8").toString();
     SolcInput.sources[key] = { content: fileContent };
   }
   return SolcInput;
 };
 
-export function isMainContract(
-  absolutePath: string,
-  astPath: string,
-  sourcesDir: string
-) {
-  // checking if its in the project main contracts ot=r and third party contract
-  sourcesDir = absolutePath.startsWith("contracts")
-    ? sourcesDir.replace("/contracts", "")
-    : sourcesDir.replace("/contracts", "/node_modules");
+export function isMainContract(absolutePath: string, astPath: string) {
   // Extract the contract name from absolute path
-  if (!fileExists(resolve(sourcesDir, absolutePath)) || !fileExists(astPath)) {
-    throw new Error(`File does not exist :${resolve(sourcesDir, absolutePath)},
-    ${absolutePath},
-    ${astPath}`);
-  }
+  // if (!fileExists(resolve(sourcesDir, absolutePath)) || !fileExists(astPath)) {
+  //   throw new Error(`File does not exist :${resolve(sourcesDir, absolutePath)},
+  //   ${absolutePath},
+  //   ${astPath}`);
+  // }
   const contractName = getContractName(absolutePath);
 
   // Extract the contract name from ast path
@@ -68,7 +66,7 @@ function fileExists(filePath: string) {
   try {
     return fs.statSync(filePath).isFile();
   } catch (err: any) {
-    if (err.code === "ENOENT") {
+    if (err.code === 'ENOENT') {
       return false;
     } else {
       throw err;
@@ -76,25 +74,22 @@ function fileExists(filePath: string) {
   }
 }
 
-export const makeBuild = async (
-  config: Config,
-  contractList: string[] = []
-) => {
+export const makeBuild = async (config: Config, contractList: string[] = []) => {
   compileAst(config);
   const { sources: astSources, fullSources } = getAstsFromSources(
     config.astOutputDir!,
     config.root!,
-    config.sourcesDir!
+    config.sourcesDir!,
   )!;
   const solcOutput = createRawOutput(astSources);
-  const sourcesList = Object.values(fullSources).map((source) => source.asts);
+  const sourcesList = Object.values(fullSources).map(source => source.asts);
 
   const sortedSources = sortASTByDependency(sourcesList, solcOutput);
   updateDependices(fullSources, sortedSources, config);
-  const ph = path.join(config.root!, "build/astBuild.json");
+  const ph = path.join(config.root!, 'build/astBuild.json');
   fs.writeFileSync(ph, JSON.stringify(sortedSources, null, 2));
   solcOutput.sources = sortedSources;
-  const solcInput = createInput(solcOutput, config.sourcesDir!);
+  const solcInput = createInput(solcOutput);
   const build: Build = {
     input: solcInput,
     output: solcOutput,

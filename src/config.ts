@@ -8,6 +8,11 @@ export interface UserConfig {
   outputDir?: string;
 
   /**
+   * The directory where external sources such as node modules etc., are located.
+   */
+  externalDir?: string;
+
+  /**
    * A directory of custom templates that should take precedence over the
    * theme's templates.
    */
@@ -83,6 +88,7 @@ export type FullConfig = Required<Config>;
 export const defaults: Omit<FullConfig, 'templates'> = {
   root: process.cwd(),
   sourcesDir: 'contracts',
+  externalDir: 'node_modules',
   outputDir: 'docs',
   astOutputDir: 'ast',
   compilerPath: '~/.everdev/solidity/solc',

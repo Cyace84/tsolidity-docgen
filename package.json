@@ -25,8 +25,8 @@
   },
   "dependencies": {
     "asciidoctor": "^3.0.2",
-    "handlebars": "^4.7.7",
-    "solidity-ast": "^0.4.38"
+    "handlebars": "4.7.7",
+    "solidity-ast": "0.4.38"
   },
   "devDependencies": {
     "@types/mocha": "^7.0.2",

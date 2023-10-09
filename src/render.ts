@@ -68,7 +68,7 @@ function readmeHelper(
   );
   return new H.SafeString(
     H.compile(
-      fs.readFileSync(resolve(srcDir.replace("/contracts", ""), path), "utf8")
+      fs.readFileSync(path, "utf8")
     )(renderedItems, opts)
   );
 }

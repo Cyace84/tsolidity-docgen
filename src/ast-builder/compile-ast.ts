@@ -1,9 +1,9 @@
-import fs from "fs";
-import { execSync } from "child_process";
-import { Config } from "../config";
-import { getAstsFromSources, getContractsList } from "./getters";
+import fs from 'fs';
+import { execSync } from 'child_process';
+import { Config } from '../config';
+import { getAstsFromSources, getContractsList } from './getters';
 
-import { basename, join, extname, resolve } from "path";
+import { basename, join, extname, resolve } from 'path';
 
 const createDirectoryIfNotExists = (dir: string) => {
   if (!fs.existsSync(dir)) {
@@ -13,7 +13,7 @@ const createDirectoryIfNotExists = (dir: string) => {
 
 const moveFiles = (sourceDir: string, destinationDir: string) => {
   let files = fs.readdirSync(sourceDir);
-  files.forEach((file) => {
+  files.forEach(file => {
     let oldPath = join(sourceDir, file);
     let newPath = join(destinationDir, file);
     fs.renameSync(oldPath, newPath);
@@ -37,20 +37,15 @@ export const compileAst = (config: Config) => {
   deleteDirectoryIfExists(astOutputPath);
 
   let astCachePath = resolve(config.root!, `ast-cache`);
-  let astPath = resolve(config.root!, "ast");
+  let astPath = resolve(config.root!, 'ast');
 
   createDirectoryIfNotExists(astCachePath);
   createDirectoryIfNotExists(astPath);
-  const nodeModules =
-    config.sourcesDir != "contracts"
-      ? `--base-path ${config.sourcesDir?.replace(
-          "/contracts",
-          ""
-        )} -i ${config.sourcesDir?.replace("/contracts", "/node_modules")}`
-      : "";
-  contracts.forEach((contract) => {
+
+  const externalContracts = config.externalDir ? `-i $PWD/${config.externalDir}` : '';
+  contracts.forEach(contract => {
     execSync(
-      `${config.compilerPath} --ast-compact-json ${config.sourcesDir}/${contract} --output-dir=${astCachePath} ${nodeModules}`
+      `${config.compilerPath} --ast-compact-json ${config.sourcesDir}/${contract} --output-dir=${astCachePath} ${externalContracts}`,
     );
     moveFiles(astCachePath, astOutputPath);
   });
@@ -71,27 +66,21 @@ export const compileExternalAst = async (config: Config) => {
     config.astOutputDir!,
 
     config.root!,
-    config.sourcesDir!
+    config.sourcesDir!,
   );
 
   let astCachePath = resolve(config.root!, `ast-cache`);
-  let astPath = resolve(config.root!, "ast");
+  let astPath = resolve(config.root!, 'ast');
 
   createDirectoryIfNotExists(astCachePath);
   createDirectoryIfNotExists(astPath);
-  const nodeModules =
-    config.sourcesDir != "contracts"
-      ? `--base-path ${config.sourcesDir?.replace(
-          "/contracts",
-          ""
-        )} -i ${config.sourcesDir?.replace("contracts", "node_modules")}`
-      : "";
-  Object.values(fullSources).forEach((source) => {
+  const externalContracts = config.externalDir ? `-i $PWD/${config.externalDir}` : '';
+  Object.values(fullSources).forEach(source => {
     for (const ast of source.asts) {
       const absolutePath = ast.absolutePath;
       if (!absolutePath.startsWith(config.sourcesDir!)) {
         execSync(
-          `${config.compilerPath} --ast-compact-json $PWD/${config.sourcesDir}/${absolutePath} --output-dir=${astCachePath} ${nodeModules}`
+          `${config.compilerPath} --ast-compact-json $PWD/${absolutePath} --output-dir=${astCachePath} ${externalContracts}`,
         );
       }
     }
@@ -104,15 +93,15 @@ export const compileExternalAst = async (config: Config) => {
 const renameAstFiles = (dir: string) => {
   const files = fs.readdirSync(dir);
 
-  files.forEach((file) => {
-    if (file.endsWith(".sol_json.ast")) {
+  files.forEach(file => {
+    if (file.endsWith('.sol_json.ast')) {
       const oldPath = join(dir, file);
-      const newFileName = basename(file, ".sol_json.ast") + ".ast.json";
+      const newFileName = basename(file, '.sol_json.ast') + '.ast.json';
       const newPath = join(dir, newFileName);
       fs.renameSync(oldPath, newPath);
-    } else if (file.endsWith(".tsol_json.ast")) {
+    } else if (file.endsWith('.tsol_json.ast')) {
       const oldPath = join(dir, file);
-      const newFileName = basename(file, ".tsol_json.ast") + ".ast.json";
+      const newFileName = basename(file, '.tsol_json.ast') + '.ast.json';
       const newPath = join(dir, newFileName);
       fs.renameSync(oldPath, newPath);
     }
@@ -122,10 +111,10 @@ const renameAstFiles = (dir: string) => {
 const wrapAstInArray = (dir: string) => {
   const files = fs.readdirSync(dir);
 
-  files.forEach((file) => {
-    if (extname(file) === ".json") {
+  files.forEach(file => {
+    if (extname(file) === '.json') {
       const filePath = join(dir, file);
-      const content = fs.readFileSync(filePath, "utf8");
+      const content = fs.readFileSync(filePath, 'utf8');
       let jsonContent;
 
       try {
